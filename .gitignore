@@ -1,0 +1,7 @@
+node_modules/
+.env
+.DS_Store
+*.log
+models_list.json
+test_gemini.js
+list_models.js

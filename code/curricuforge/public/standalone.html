@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CurricuForge - Generator</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        /* LIGHT THEME (Default: Orange & White) */
+        :root {
+            --primary: #f97316;
+            /* Orange-500 */
+            --primary-glow: rgba(249, 115, 22, 0.3);
+            --secondary: #fb923c;
+            /* Orange-400 */
+            --secondary-glow: rgba(251, 146, 60, 0.3);
+
+            --background: #fff7ed;
+            /* Very light orange/white */
+            --surface: #ffffff;
+            --surface-transparent: rgba(255, 255, 255, 0.6);
+
+            --text: #1f2937;
+            /* Gray-800 */
+            --text-muted: #6b7280;
+
+            --glass-border: rgba(249, 115, 22, 0.15);
+            --glass-shadow: rgba(249, 115, 22, 0.05);
+
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --input-text: #1f2937;
+        }
+
+        /* DARK THEME (Orange & Black) */
+        [data-theme="dark"] {
+            --primary: #f97316;
+            --primary-glow: rgba(249, 115, 22, 0.4);
+            --secondary: #c2410c;
+
+            --background: #0c0a09;
+            /* Warm Black */
+            --surface: #1c1917;
+            --surface-transparent: rgba(28, 25, 23, 0.7);
+
+            --text: #fff7ed;
+            --text-muted: #a8a29e;
+
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.3);
+
+            --input-bg: rgba(12, 10, 9, 0.6);
+            --input-text: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            /* Subtle Background gradient based on theme */
+            background-image:
+                radial-gradient(circle at 10% 20%, var(--primary-glow), transparent 30%),
+                radial-gradient(circle at 90% 80%, var(--secondary-glow), transparent 30%);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        /* Toggle Switch */
+        .theme-toggle-wrapper {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            z-index: 50;
+        }
+
+        .theme-btn {
+            background: var(--surface-transparent);
+            border: 1px solid var(--glass-border);
+            color: var(--primary);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--glass-shadow);
+            font-size: 1.2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-top: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            color: var(--primary);
+            text-shadow: 0 2px 10px var(--primary-glow);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: var(--surface-transparent);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--glass-shadow);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media(min-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--input-text);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        button.action-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            /* Always white text on orange button */
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button.action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px var(--primary-glow);
+        }
+
+        /* Schedule Display */
+        #results-area {
+            display: none;
+        }
+
+        .schedule-card {
+            background: var(--surface-transparent);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+            box-shadow: 0 4px 6px var(--glass-shadow);
+        }
+
+        .card-header {
+            background: var(--primary);
+            /* Orange Header */
+            padding: 1rem;
+            font-weight: bold;
+            color: #fff;
+            /* White text on orange */
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(5, 1fr);
+            gap: 1px;
+            background: var(--glass-border);
+            /* Grid lines color */
+        }
+
+        .grid-header {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .grid-cell {
+            background: var(--surface);
+            padding: 1rem 0.5rem;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+
+        .subject {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .teacher {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Special Slots with Orange Tints */
+        .cell-lunch {
+            background: rgba(249, 115, 22, 0.1) !important;
+            border-left: 3px solid var(--primary);
+        }
+
+        .cell-lunch .subject {
+            color: var(--secondary);
+        }
+
+        .cell-free {
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.02) !important;
+        }
+
+        [data-theme="dark"] .cell-free {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Floating action button for PDF */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: auto;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 10px 30px var(--primary-glow);
+            z-index: 100;
+            display: none;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .fab:hover {
+            transform: scale(1.05);
+        }
+
+        #welcome-message .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        /* Modal Styles */
+        .modal-base {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--glass-border);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--background);
+        }
+
+        .modal-body {
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--surface-transparent);
+        }
+
+        .history-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-wrapper" style="display: flex; gap: 10px;">
+            <button class="theme-btn" onclick="openHistory()" title="Previous Works">
+                🕒
+            </button>
+            <button class="theme-btn" id="themeToggle" title="Toggle Dark Mode">
+                ☀
+            </button>
+        </div>
+
+        <div class="header">
+            <h1>CurricuForge</h1>
+            <p>Generative AI Curriculum Design System</p>
+        </div>
+
+        <div class="grid-layout">
+            <!-- Input Section -->
+            <div class="glass-panel">
+                <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Configuration</h2>
+                <form id="configForm">
+                    <div class="form-group">
+                        <label>Grades (Count)</label>
+                        <input type="number" id="grades" value="5" min="1" max="12" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sections per Grade</label>
+                        <input type="number" id="sections" value="2" min="1" max="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Subjects (Comma separated)</label>
+                        <textarea id="subjects" rows="3"
+                            required>Math, Physics, Chemistry, Biology, English, History, CS, Art</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Teachers (Comma separated)</label>
+                        <textarea id="teachers" rows="3"
+                            required>Ms. Johnson, Mr. Smith, Mrs. Davis, Mr. Wilson, Dr. Brown, Ms. Miller, Mr. White, Mrs. Green</textarea>
+                    </div>
+                    <div class="row" style="display:flex; gap:1rem;">
+                        <div class="form-group" style="flex:1">
+                            <label>Classes / Day</label>
+                            <input type="number" id="classesPerDay" value="7" min="4" max="10">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>Lunch Slot (Index)</label>
+                            <input type="number" id="lunchSlot" value="4" min="1" max="8">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="action-btn">Generate Schedule</button>
+                </form>
+            </div>
+
+            <!-- Start Message -->
+            <div id="welcome-message"
+                style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: var(--text-muted);">
+                <div class="icon">✨</div>
+                <h3 style="color: var(--text); margin-bottom: 0.5rem; font-size: 1.5rem;">Ready to Forge</h3>
+                <p>Enter your school's requirements to generate optimized weekly schedules instantly.</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-area">
+                <!-- Schedules will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal-base">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color: var(--primary); margin:0;">Previous Works</h3>
+                <button class="close-btn" onclick="closeHistory()">×</button>
+            </div>
+            <div class="modal-body" id="historyList">
+                <!-- Items injected here -->
+                <p style="text-align:center; padding: 2rem; color: var(--text-muted);">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="position: fixed; bottom: 30px; right: 30px; display: flex; gap: 10px; z-index: 100;">
+        <button id="saveBtn"
+            style="display:none; padding: 1rem 2rem; border-radius: 50px; background: var(--secondary); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 10px 30px var(--primary-glow); transition: transform 0.2s;"
+            onclick="saveToDB()">Save to DB</button>
+        <button id="downloadBtn"
+            style="display:none; padding: 1rem 2rem; border-radius: 50px; background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 10px 30px var(--primary-glow); transition: transform 0.2s;"
+            onclick="downloadPDF()">Download PDF</button>
+    </div>
+
+    <script>
+        // --- Theme Logic ---
+        const themeBtn = document.getElementById('themeToggle');
+        const htmlEl = document.documentElement;
+
+        themeBtn.addEventListener('click', () => {
+            const current = htmlEl.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            htmlEl.setAttribute('data-theme', next);
+            themeBtn.innerText = next === 'light' ? '☀' : '☾';
+        });
+
+        // --- Generator Logic ---
+        function generateCurriculumData(config) {
+            const { grades, sectionsPerGrade, subjects, teachers, classesPerDay, lunchSlot } = config;
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            const fullCurriculum = [];
+
+            // Availability grid
+            const teacherSchedule = {};
+            teachers.forEach(t => {
+                teacherSchedule[t] = Array(5).fill(null).map(() => Array(classesPerDay).fill(false));
+            });
+
+            for (let g = 1; g <= grades; g++) {
+                for (let s = 1; s <= sectionsPerGrade; s++) {
+                    const sectionName = `Grade ${g} - Section ${String.fromCharCode(64 + s)}`;
+                    const sectionSchedule = { name: sectionName, days: [] };
+
+                    for (let d = 0; d < 5; d++) {
+                        const dailySlots = [];
+                        for (let p = 0; p < classesPerDay; p++) {
+                            if (p + 1 === lunchSlot) {
+                                dailySlots.push({ type: 'Lunch', subject: 'LUNCH BREAK', teacher: '' });
+                                continue;
+                            }
+
+                            let assigned = false;
+                            const shuffledSubjects = [...subjects].sort(() => 0.5 - Math.random());
+
+                            for (const subj of shuffledSubjects) {
+                                const shuffledTeachers = [...teachers].sort(() => 0.5 - Math.random());
+                                for (const t of shuffledTeachers) {
+                                    if (!teacherSchedule[t][d][p]) {
+                                        dailySlots.push({ type: 'Class', subject: subj, teacher: t });
+                                        teacherSchedule[t][d][p] = true;
+                                        assigned = true;
+                                        break;
+                                    }
+                                }
+                                if (assigned) break;
+                            }
+
+                            if (!assigned) {
+                                dailySlots.push({ type: 'Free', subject: 'SELF STUDY', teacher: '-' });
+                            }
+                        }
+                        sectionSchedule.days.push({ day: days[d], slots: dailySlots });
+                    }
+                    fullCurriculum.push(sectionSchedule);
+                }
+            }
+            return fullCurriculum;
+        }
+
+        // --- UI Logic ---
+        const form = document.getElementById('configForm');
+        const resultsArea = document.getElementById('results-area');
+        const welcomeMsg = document.getElementById('welcome-message');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        let currentScheduleData = null;
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const config = {
+                grades: parseInt(document.getElementById('grades').value),
+                sectionsPerGrade: parseInt(document.getElementById('sections').value),
+                subjects: document.getElementById('subjects').value.split(',').map(s => s.trim()).filter(s => s),
+                teachers: document.getElementById('teachers').value.split(',').map(t => t.trim()).filter(t => t),
+                classesPerDay: parseInt(document.getElementById('classesPerDay').value),
+                lunchSlot: parseInt(document.getElementById('lunchSlot').value)
+            };
+
+            currentScheduleData = generateCurriculumData(config);
+            renderSchedule(currentScheduleData);
+        });
+
+        function renderSchedule(data) {
+            welcomeMsg.style.display = 'none';
+            resultsArea.style.display = 'block';
+            resultsArea.innerHTML = '';
+            document.getElementById('downloadBtn').style.display = 'block';
+            document.getElementById('saveBtn').style.display = 'block';
+
+            data.forEach(section => {
+                const card = document.createElement('div');
+                card.className = 'schedule-card';
+
+                const header = document.createElement('div');
+                header.className = 'card-header';
+                header.textContent = section.name;
+                card.appendChild(header);
+
+                const grid = document.createElement('div');
+                grid.className = 'schedule-grid';
+
+                const corner = document.createElement('div');
+                corner.className = 'grid-header';
+                corner.textContent = 'Period';
+                grid.appendChild(corner);
+
+                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].forEach(day => {
+                    const dh = document.createElement('div');
+                    dh.className = 'grid-header';
+                    dh.textContent = day;
+                    grid.appendChild(dh);
+                });
+
+                const periods = section.days[0].slots.length;
+                for (let p = 0; p < periods; p++) {
+                    const pl = document.createElement('div');
+                    pl.className = 'grid-cell';
+                    pl.style.fontWeight = 'bold';
+                    pl.textContent = p + 1;
+                    grid.appendChild(pl);
+
+                    for (let d = 0; d < 5; d++) {
+                        const slot = section.days[d].slots[p];
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        if (slot.type === 'Lunch') cell.classList.add('cell-lunch');
+                        if (slot.type === 'Free') cell.classList.add('cell-free');
+
+                        const subjSpan = document.createElement('div');
+                        subjSpan.className = 'subject';
+                        subjSpan.textContent = slot.subject;
+                        cell.appendChild(subjSpan);
+
+                        if (slot.teacher) {
+                            const teachSpan = document.createElement('div');
+                            teachSpan.className = 'teacher';
+                            teachSpan.textContent = slot.teacher;
+                            cell.appendChild(teachSpan);
+                        }
+                        grid.appendChild(cell);
+                    }
+                }
+                card.appendChild(grid);
+                resultsArea.appendChild(card);
+            });
+        }
+
+        // --- PDF Export ---
+        window.downloadPDF = function () {
+            if (!currentScheduleData) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(22);
+            doc.setTextColor(249, 115, 22); // Orange
+            doc.text("CurricuForge Master Schedule", 14, 20);
+
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+
+            currentScheduleData.forEach((section, index) => {
+                if (index > 0) doc.addPage();
+
+                doc.setFontSize(16);
+                doc.setTextColor(0);
+                doc.text(section.name, 14, 40);
+
+                const body = [];
+                const periods = section.days[0].slots.length;
+
+                for (let p = 0; p < periods; p++) {
+                    const row = [`Period ${p + 1}`];
+                    for (let d = 0; d < 5; d++) {
+                        const slot = section.days[d].slots[p];
+                        row.push(`${slot.subject}\n${slot.teacher}`);
+                    }
+                    body.push(row);
+                }
+
+                doc.autoTable({
+                    head: [['Time', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']],
+                    body: body,
+                    startY: 50,
+                    styles: { fontSize: 8, cellPadding: 3, valign: 'middle', halign: 'center' },
+                    headStyles: { fillColor: [249, 115, 22] }, // Orange Header
+                    alternateRowStyles: { fillColor: [255, 247, 237] }, // Very light orange
+                    theme: 'grid'
+                });
+            });
+
+            doc.save('CurricuForge_Schedule.pdf');
+        }
+
+        // --- Save to MongoDB Logic ---
+        window.saveToDB = async function () {
+            if (!currentScheduleData) return;
+
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerText;
+            saveBtn.innerText = 'Saving...';
+            saveBtn.disabled = true;
+
+            const config = {
+                grades: parseInt(document.getElementById('grades').value),
+                sectionsPerGrade: parseInt(document.getElementById('sections').value),
+                subjects: document.getElementById('subjects').value.split(',').map(s => s.trim()).filter(s => s),
+                teachers: document.getElementById('teachers').value.split(',').map(t => t.trim()).filter(t => t),
+                classesPerDay: parseInt(document.getElementById('classesPerDay').value),
+                lunchSlot: parseInt(document.getElementById('lunchSlot').value)
+            };
+
+            try {
+                // Assuming the server is running on port 3000
+                const response = await fetch('http://localhost:3000/api/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        config: config,
+                        data: currentScheduleData
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Schedule saved to Database successfully!');
+                } else {
+                    alert('Failed to save: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving to DB:', error);
+                alert('Error connecting to server. Make sure the Node server is running on port 3000.');
+            } finally {
+                saveBtn.innerText = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        // --- History Logic ---
+        const modal = document.getElementById('historyModal');
+        const historyList = document.getElementById('historyList');
+
+        window.openHistory = async function () {
+            modal.style.display = 'flex';
+            historyList.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">Loading...</p>';
+
+            try {
+                const res = await fetch('http://localhost:3000/api/schedules');
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    historyList.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">No saved schedules found.</p>';
+                    return;
+                }
+
+                historyList.innerHTML = '';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `
+                        <div style="font-weight:bold; color:var(--text);">${item.config.grades} Grades, ${item.config.sectionsPerGrade} Sections</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+                            ${new Date(item.createdAt).toLocaleString()}
+                        </div>
+                    `;
+                    div.onclick = () => loadHistoryItem(item._id);
+                    historyList.appendChild(div);
+                });
+
+            } catch (e) {
+                historyList.innerHTML = '<p style="text-align:center; color: red;">Error fetching history</p>';
+            }
+        }
+
+        window.closeHistory = function () {
+            modal.style.display = 'none';
+        }
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeHistory();
+        });
+
+        async function loadHistoryItem(id) {
+            try {
+                historyList.innerHTML = '<p style="text-align:center; padding: 2rem;">Loading details...</p>';
+                const res = await fetch(`http://localhost:3000/api/schedules/${id}`);
+                const fullData = await res.json();
+
+                if (fullData && fullData.data) {
+                    // Populate Form
+                    if (fullData.config) {
+                        document.getElementById('grades').value = fullData.config.grades;
+                        document.getElementById('sections').value = fullData.config.sectionsPerGrade;
+                        document.getElementById('subjects').value = fullData.config.subjects.join(', ');
+                        document.getElementById('teachers').value = fullData.config.teachers.join(', ');
+                        document.getElementById('classesPerDay').value = fullData.config.classesPerDay;
+                        document.getElementById('lunchSlot').value = fullData.config.lunchSlot;
+                    }
+
+                    currentScheduleData = fullData.data;
+                    renderSchedule(currentScheduleData);
+                    closeHistory();
+                }
+
+            } catch (e) {
+                alert('Failed to load item');
+                closeHistory();
+            }
+        }
+    </script>
+
+</body>
+
+</html>

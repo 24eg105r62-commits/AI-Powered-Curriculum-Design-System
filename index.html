@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CurricuForge - Generator</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        // Check for authentication
+        if (!sessionStorage.getItem('isLoggedIn')) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <style>
+        /* LIGHT THEME (Default: Orange & White) */
+        :root {
+            --primary: #f97316;
+            /* Orange-500 */
+            --primary-glow: rgba(249, 115, 22, 0.3);
+            --secondary: #fb923c;
+            /* Orange-400 */
+            --secondary-glow: rgba(251, 146, 60, 0.3);
+
+            --background: #fff7ed;
+            /* Very light orange/white */
+            --surface: #ffffff;
+            --surface-transparent: rgba(255, 255, 255, 0.6);
+
+            --text: #1f2937;
+            /* Gray-800 */
+            --text-muted: #6b7280;
+
+            --glass-border: rgba(249, 115, 22, 0.15);
+            --glass-shadow: rgba(249, 115, 22, 0.05);
+
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --surface-transparent: rgba(255, 255, 255, 0.8);
+            --text: #2d3436;
+            --text-muted: #636e72;
+            --glass-border: rgba(0, 0, 0, 0.08);
+            --glass-shadow: rgba(0, 0, 0, 0.05);
+            --bg-color: #f9f6f2;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --input-bg: rgba(255, 255, 255, 0.9);
+            --input-text: #2d3436;
+        }
+
+        /* DARK THEME (Orange & Black) */
+        [data-theme="dark"] {
+            --primary: #f97316;
+            --primary-glow: rgba(249, 115, 22, 0.4);
+            --secondary: #c2410c;
+
+            --background: #0c0a09;
+            /* Warm Black */
+            --surface: #1c1917;
+            --surface-transparent: rgba(28, 25, 23, 0.7);
+
+            --text: #fff7ed;
+            --text-muted: #a8a29e;
+
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.3);
+
+            --input-bg: rgba(12, 10, 9, 0.6);
+            --input-text: #ffffff;
+        }
+
+        /* Chatbot Styles */
+        .chat-widget {
+            /* Positioned relative to parent container now */
+            z-index: 1000;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .chat-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .chat-button:hover {
+            transform: scale(1.1);
+            background: var(--secondary);
+        }
+
+        .chat-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 350px;
+            height: 500px;
+            background: var(--surface-transparent);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px var(--glass-shadow);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        .chat-window.active {
+            display: flex;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-body {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .chat-message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-message.ai {
+            align-self: flex-start;
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text);
+            border-bottom-left-radius: 2px;
+        }
+
+        .chat-message.user {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+            background: white;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .chat-send {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            /* Subtle Background gradient based on theme */
+            background-image:
+                radial-gradient(circle at 10% 20%, var(--primary-glow), transparent 30%),
+                radial-gradient(circle at 90% 80%, var(--secondary-glow), transparent 30%);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+        }
+
+        /* Toggle Switch */
+        .theme-toggle-wrapper {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            z-index: 50;
+        }
+
+        .theme-btn {
+            background: var(--surface-transparent);
+            border: 1px solid var(--glass-border);
+            color: var(--primary);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--glass-shadow);
+            font-size: 1.2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-top: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            color: var(--primary);
+            text-shadow: 0 2px 10px var(--primary-glow);
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: var(--surface-transparent);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px var(--glass-shadow);
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media(min-width: 900px) {
+            .grid-layout {
+                grid-template-columns: 1fr 2fr;
+            }
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--glass-border);
+            color: var(--input-text);
+            padding: 0.8rem 1rem;
+            border-radius: 8px;
+            font-family: inherit;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        button.action-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            /* Always white text on orange button */
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button.action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px var(--primary-glow);
+        }
+
+        /* Schedule Display */
+        #results-area {
+            display: none;
+        }
+
+        .schedule-card {
+            background: var(--surface-transparent);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+            box-shadow: 0 4px 6px var(--glass-shadow);
+        }
+
+        .card-header {
+            background: var(--primary);
+            /* Orange Header */
+            padding: 1rem;
+            font-weight: bold;
+            color: #fff;
+            /* White text on orange */
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(5, 1fr);
+            gap: 1px;
+            background: var(--glass-border);
+            /* Grid lines color */
+        }
+
+        .grid-header {
+            background: var(--surface);
+            color: var(--text);
+            padding: 1rem 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .grid-cell {
+            background: var(--surface);
+            padding: 1rem 0.5rem;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text);
+        }
+
+        .subject {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .teacher {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Special Slots with Orange Tints */
+        .cell-lunch {
+            background: rgba(249, 115, 22, 0.1) !important;
+            border-left: 3px solid var(--primary);
+        }
+
+        .cell-lunch .subject {
+            color: var(--secondary);
+        }
+
+        .cell-free {
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.02) !important;
+        }
+
+        [data-theme="dark"] .cell-free {
+            background: rgba(255, 255, 255, 0.05) !important;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Floating action button for PDF */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: auto;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 10px 30px var(--primary-glow);
+            z-index: 100;
+            display: none;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .fab:hover {
+            transform: scale(1.05);
+        }
+
+        #welcome-message .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        /* Modal Styles */
+        .modal-base {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--glass-border);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--background);
+        }
+
+        .modal-body {
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 1rem;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--surface-transparent);
+        }
+
+        .history-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-wrapper" style="display: flex; gap: 10px;">
+            <button class="theme-btn" onclick="openProfile()" title="User Profile">
+                👤
+            </button>
+            <button class="theme-btn" onclick="openHistory()" title="Previous Works">
+                🕒
+            </button>
+            <button class="theme-btn" id="themeToggle" title="Toggle Dark Mode">
+                ☀
+            </button>
+        </div>
+
+        <div class="header">
+            <h1 id="dashboardTitle">CurricuForge</h1>
+            <p>Generative AI Curriculum Design System</p>
+        </div>
+
+        <script>
+            const userRole = sessionStorage.getItem('userRole');
+            const titleEl = document.getElementById('dashboardTitle');
+            if (userRole === 'admin') {
+                titleEl.textContent = 'Administrator Dashboard';
+            } else if (userRole === 'faculty') {
+                titleEl.textContent = 'Faculty Dashboard';
+            }
+        </script>
+
+        <div class="grid-layout">
+            <!-- Input Section -->
+            <div class="glass-panel" id="adminConfigPanel">
+                <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Configuration</h2>
+                <form id="configForm">
+                    <div class="form-group">
+                        <label>Grades (Count)</label>
+                        <input type="number" id="grades" value="5" min="1" max="12" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Sections per Grade</label>
+                        <input type="number" id="sections" value="2" min="1" max="5" required>
+                    </div>
+                    <div class="row" style="display:flex; gap:1rem;">
+                        <div class="form-group" style="flex:1">
+                            <label>Classes / Day</label>
+                            <input type="number" id="classesPerDay" value="7" min="4" max="10">
+                        </div>
+                        <div class="form-group" style="flex:1">
+                            <label>Lunch Slot (Index)</label>
+                            <input type="number" id="lunchSlot" value="4" min="1" max="8">
+                        </div>
+                    </div>
+
+                    <!-- New Teacher Registry UI -->
+                    <div class="form-group">
+                        <label style="margin-bottom:0.5rem; display:block;">Teacher Registry</label>
+                        <div style="background: var(--glass-border); padding: 1rem; border-radius: 8px;">
+                            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                                <input type="text" id="newTeacherName" placeholder="Teacher Name" style="flex: 2;">
+                                <input type="text" id="newTeacherSubject" placeholder="Subject" style="flex: 2;">
+                                <button type="button" id="addTeacherBtn"
+                                    style="flex: 1; background: var(--secondary); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Add</button>
+                            </div>
+
+                            <div id="teacherList"
+                                style="max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <!-- Teacher items will be added here -->
+                                <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 1rem;"
+                                    id="emptyRegistryMsg">
+                                    No teachers added yet.
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Hidden input to validate we have teachers (now optional) -->
+                        <input type="text" id="teacherRegistryData"
+                            style="opacity: 0; height: 1px; width: 1px; position: absolute;">
+                    </div>
+
+                    <!-- Registered Faculty List (Visible to Admin Only) -->
+                    <div id="registeredFacultyContainer" class="form-group" style="margin-top: 2rem; display: none;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label>Registered Faculty (Staff)</label>
+                            <select id="facultyLevelFilter" onchange="loadRegisteredFaculty()"
+                                style="background: var(--surface); border: 1px solid var(--glass-border); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; color: var(--text);">
+                                <option value="All">All Levels</option>
+                                <option value="Kindergarden">Kindergarden</option>
+                                <option value="Juniorschool">Juniorschool</option>
+                                <option value="Highschool">Highschool</option>
+                            </select>
+                        </div>
+                        <div
+                            style="background: var(--surface); border: 1px solid var(--glass-border); padding: 1rem; border-radius: 8px;">
+                            <div id="registeredFacultyList" style="max-height: 150px; overflow-y: auto;">
+                                <div
+                                    style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem;">
+                                    Fetching registered staff...
+                                </div>
+                            </div>
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Names appear here as
+                            faculty members register and log in.</p>
+                    </div>
+
+                    <button type="submit" class="action-btn">Generate Schedule</button>
+                </form>
+            </div>
+
+            <!-- Faculty View Hint -->
+            <div id="facultyHint" class="glass-panel" style="display:none;">
+                <h2 style="margin-bottom: 1.5rem; color: var(--primary);">Faculty View</h2>
+                <div
+                    style="background: var(--glass-border); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem;">
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">Welcome to your personalized dashboard. You can
+                        view the complete institutional timetable below.</p>
+                    <div
+                        style="display: flex; align-items: center; gap: 10px; color: var(--primary); font-weight: bold;">
+                        <span style="font-size: 1.5rem;">ℹ️</span>
+                        <span>Your allotted classes are highlighted in the schedule.</span>
+                    </div>
+                </div>
+                <button type="button" class="action-btn" onclick="autoLoadInstitutionSchedule()">Refresh
+                    Schedule</button>
+            </div>
+
+            <!-- Start Message -->
+            <div id="welcome-message"
+                style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: var(--text-muted);">
+                <div class="icon">✨</div>
+                <h3 style="color: var(--text); margin-bottom: 0.5rem; font-size: 1.5rem;">Ready to Forge</h3>
+                <p>Enter your school's requirements to generate optimized weekly schedules instantly.</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="results-area">
+                <!-- Schedules will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal-base">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="color: var(--primary); margin:0;">Previous Works</h3>
+                <button class="close-btn" onclick="closeHistory()">×</button>
+            </div>
+            <div class="modal-body" id="historyList">
+                <!-- Items injected here -->
+                <p style="text-align:center; padding: 2rem; color: var(--text-muted);">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profileModal" class="modal-base">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3 style="color: var(--primary); margin:0;">User Profile</h3>
+                <button class="close-btn" onclick="closeProfile()">×</button>
+            </div>
+            <div class="modal-body" style="text-align: center; padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">👤</div>
+                <h2 id="profileName" style="margin-bottom: 0.5rem; color: var(--text);">User Name</h2>
+                <p id="profileInstitution" style="color: var(--text-muted); margin-bottom: 0.5rem;">Institution</p>
+                <p id="profileEmail" style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">
+                    email@example.com</p>
+
+                <button onclick="logout()" class="action-btn" style="background: var(--text-muted); margin-top: 0;">Log
+                    Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Bottom-Right Controls -->
+    <div
+        style="position: fixed; bottom: 30px; right: 30px; display: flex; flex-direction: column-reverse; align-items: flex-end; gap: 15px; z-index: 1000;">
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 10px;">
+            <button id="saveBtn"
+                style="display:none; padding: 1rem 2rem; border-radius: 50px; background: var(--secondary); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 10px 30px var(--primary-glow); transition: transform 0.2s;"
+                onclick="saveToDB()">Save to DB</button>
+            <button id="downloadBtn"
+                style="display:none; padding: 1rem 2rem; border-radius: 50px; background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 10px 30px var(--primary-glow); transition: transform 0.2s;"
+                onclick="downloadPDF()">Download PDF</button>
+        </div>
+
+        <!-- Chatbot Widget -->
+        <div class="chat-widget">
+            <div id="chatWindow" class="chat-window">
+                <div class="chat-header">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 1.2rem;">✨</span>
+                        <span style="font-weight: 700;">CurricuForge AI</span>
+                    </div>
+                    <button onclick="toggleChat()"
+                        style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">×</button>
+                </div>
+                <div id="chatBody" class="chat-body">
+                    <div class="chat-message ai">
+                        Hello! I'm your AI assistant. Ask me anything about the schedule!
+                    </div>
+                </div>
+                <div class="chat-footer">
+                    <input type="text" id="chatInput" class="chat-input" placeholder="Ask about the schedule..."
+                        onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                    <button onclick="sendChatMessage()" class="chat-send">Send</button>
+                </div>
+            </div>
+            <button onclick="toggleChat()" class="chat-button">
+                <span>💬</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Theme Logic ---
+        const themeBtn = document.getElementById('themeToggle');
+        const htmlEl = document.documentElement;
+
+        themeBtn.addEventListener('click', () => {
+            const current = htmlEl.getAttribute('data-theme');
+            const next = current === 'light' ? 'dark' : 'light';
+            htmlEl.setAttribute('data-theme', next);
+            themeBtn.innerText = next === 'light' ? '☀' : '☾';
+        });
+
+        // --- Time Helper Functions ---
+        // Initialize Role Specific UI
+        const adminPanel = document.getElementById('adminConfigPanel');
+        const facultyHint = document.getElementById('facultyHint');
+
+        if (userRole === 'faculty') {
+            adminPanel.style.display = 'none';
+            facultyHint.style.display = 'block';
+            document.querySelector('.grid-layout').style.gridTemplateColumns = '1fr';
+
+            // Auto-load for faculty
+            window.addEventListener('DOMContentLoaded', () => {
+                setTimeout(autoLoadInstitutionSchedule, 500);
+            });
+        }
+
+        async function autoLoadInstitutionSchedule() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            const institution = currentUser.institution;
+            if (!institution) return;
+
+            try {
+                const res = await fetch(`http://localhost:3000/api/schedules/institution/${institution}`);
+                const schedules = await res.json();
+                if (schedules && schedules.length > 0) {
+                    currentScheduleData = schedules[0].data; // Load latest
+                    renderSchedule(currentScheduleData);
+                } else {
+                    document.getElementById('welcome-message').innerHTML = `
+                        <div class="icon">📅</div>
+                        <h3>No Schedule Published</h3>
+                        <p>The administrator hasn't published a schedule for ${institution} yet.</p>
+                    `;
+                }
+            } catch (e) {
+                console.error("Error autoloading:", e);
+            }
+        }
+
+        function formatTime(minutes) {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const displayH = h % 12 || 12;
+            const displayM = m < 10 ? '0' + m : m;
+            return `${displayH}:${displayM} ${ampm}`;
+        }
+
+        function getPeriodTimeRange(periodIndex) {
+            const startMinutes = 9 * 60; // 9:00 AM
+            const periodDuration = 45;
+            const currentStart = startMinutes + (periodIndex * periodDuration);
+            const currentEnd = currentStart + periodDuration;
+            return `${formatTime(currentStart)} - ${formatTime(currentEnd)}`;
+        }
+
+        // --- Teacher Registry Logic ---
+        let teacherRegistry = [];
+        const teacherListEl = document.getElementById('teacherList');
+        const emptyMsg = document.getElementById('emptyRegistryMsg');
+        const registryInput = document.getElementById('teacherRegistryData');
+        const userId = sessionStorage.getItem('userId');
+
+        // --- History / DB (Simulated now Real) ---
+        async function saveToDB() {
+            if (!currentScheduleData || !userId) return;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, data: currentScheduleData })
+                });
+
+                if (response.ok) {
+                    alert("Schedule saved to MongoDB successfully!");
+                } else {
+                    alert("Failed to save schedule.");
+                }
+            } catch (error) {
+                console.error('Error saving schedule:', error);
+                alert("Error saving schedule to server.");
+            }
+        }
+
+        // Load Schedule from API (Optional: Auto-load last schedule?)
+        // For now, let's just allow saving. Loading is typically done via "History" which is requested later or separate.
+        // But the plan mentioned "Load schedule". Let's add that to "History" logic if needed.
+        // For now, I'll update the history modal to fetch from API if requested, but the user plan for history wasn't explicit.
+        // I'll stick to saving for now as per immediate plan.
+        function loadSchedule(index) {
+            // This function is currently not used with the new API-based history.
+            // It would need to be updated to fetch a specific schedule by ID from the API.
+            console.warn("loadSchedule function is deprecated with API-based history. Use openHistory to view and select.");
+        }
+
+        async function openHistory() {
+            const modal = document.getElementById('historyModal');
+            modal.style.display = 'flex';
+            await renderHistoryList(); // Await the rendering of the list
+        }
+
+        function closeHistory() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        async function renderHistoryList() {
+            const historyListEl = document.getElementById('historyList');
+            historyListEl.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">Loading history...</p>';
+
+            if (!userId) {
+                historyListEl.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">Please log in to view history.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/schedule/${userId}`);
+                if (response.ok) {
+                    const history = await response.json();
+                    if (history.length === 0) {
+                        historyListEl.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">No previous schedules found.</p>';
+                        return;
+                    }
+
+                    historyListEl.innerHTML = ''; // Clear loading message
+                    history.forEach(item => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        const date = new Date(item.timestamp).toLocaleString();
+                        historyItem.innerHTML = `
+                            <div>
+                                <strong>Generated:</strong> ${date}
+                            </div>
+                            <div style="font-size: 0.9em; color: var(--text-muted);">
+                                Grades: ${item.data[0].name.split(' ')[1]} | Sections: ${item.data.filter(s => s.name.startsWith(`Grade ${item.data[0].name.split(' ')[1]}`)).length}
+                            </div>
+                        `;
+                        historyItem.onclick = () => {
+                            currentScheduleData = item.data;
+                            renderSchedule(currentScheduleData);
+                            closeHistory();
+                        };
+                        historyListEl.appendChild(historyItem);
+                    });
+                } else {
+                    historyListEl.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">Failed to load history.</p>';
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+                historyListEl.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">Error connecting to server.</p>';
+            }
+        }
+
+        // --- Profile Logic ---
+        function openProfile() {
+            const modal = document.getElementById('profileModal');
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+
+            document.getElementById('profileName').textContent = currentUser.name || 'Guest User';
+            document.getElementById('profileInstitution').textContent = currentUser.institution || 'Unknown Institution';
+            document.getElementById('profileEmail').textContent = currentUser.email || 'No Email';
+
+            modal.style.display = 'flex';
+        }
+
+        function closeProfile() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function logout() {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('currentUser');
+            sessionStorage.removeItem('userId');
+            window.location.href = 'login.html';
+        }
+
+        // Load Teachers from API
+        async function loadTeachers() {
+            if (!userId) return;
+            try {
+                const response = await fetch(`http://localhost:3000/api/teachers/${userId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    teacherRegistry = data || [];
+                    renderTeacherList();
+                }
+            } catch (error) {
+                console.error('Error loading teachers:', error);
+            }
+        }
+
+        // Save Teachers to API
+        async function saveTeachers() {
+            if (!userId) return;
+            try {
+                await fetch('http://localhost:3000/api/teachers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, teachers: teacherRegistry })
+                });
+            } catch (error) {
+                console.error('Error saving teachers:', error);
+            }
+        }
+
+        document.getElementById('addTeacherBtn').addEventListener('click', () => {
+            const name = document.getElementById('newTeacherName').value.trim();
+            const subject = document.getElementById('newTeacherSubject').value.trim();
+
+            if (!name || !subject) return;
+
+            teacherRegistry.push({ name, subject });
+            renderTeacherList();
+            saveTeachers(); // Auto-save on change
+
+            document.getElementById('newTeacherName').value = '';
+            document.getElementById('newTeacherSubject').value = '';
+        });
+
+        function renderTeacherList() {
+            teacherListEl.innerHTML = '';
+            if (teacherRegistry.length === 0) {
+                teacherListEl.appendChild(emptyMsg);
+                registryInput.value = '';
+                return;
+            }
+
+            registryInput.value = JSON.stringify(teacherRegistry); // For validation
+
+            teacherRegistry.forEach((t, index) => {
+                const item = document.createElement('div');
+                item.style.cssText = 'background:var(--surface); padding: 0.5rem 1rem; border-radius: 6px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--glass-border);';
+                item.innerHTML = `
+                    <span><strong>${t.name}</strong> <span style="color:var(--text-muted); font-size:0.9em;">(${t.subject})</span></span>
+                    <button onclick="removeTeacher(${index})" style="background:none; border:none; color:red; cursor:pointer;">&times;</button>
+                `;
+                teacherListEl.appendChild(item);
+            });
+        }
+
+        window.removeTeacher = function (index) {
+            teacherRegistry.splice(index, 1);
+            renderTeacherList();
+            saveTeachers(); // Auto-save on change
+        }
+
+        // Initialize
+        if (userId) {
+            loadTeachers();
+            if (userRole === 'admin') {
+                document.getElementById('registeredFacultyContainer').style.display = 'block';
+                loadRegisteredFaculty();
+                // Refresh list every 30 seconds for admin
+                setInterval(loadRegisteredFaculty, 30000);
+            }
+        }
+
+        async function loadRegisteredFaculty() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            const institution = currentUser.institution;
+            if (!institution) return;
+
+            const filter = document.getElementById('facultyLevelFilter').value;
+
+            try {
+                const res = await fetch(`http://localhost:3000/api/faculty/${institution}?level=${filter}`);
+                const faculty = await res.json();
+                const listEl = document.getElementById('registeredFacultyList');
+
+                if (!faculty || faculty.length === 0) {
+                    listEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; padding: 0.5rem;">No ${filter !== 'All' ? filter : ''} faculty registered yet.</div>`;
+                    return;
+                }
+
+                listEl.innerHTML = '';
+                faculty.forEach(f => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'padding: 8px; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;';
+                    item.innerHTML = `
+                        <div style="display:flex; flex-direction:column;">
+                            <span style="font-weight:600;">${f.name}</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${f.subject} (${f.level})</span>
+                        </div>
+                        <button type="button" onclick="quickAddTeacher('${f.name}', '${f.subject}')" 
+                                style="background: var(--primary-glow); color: var(--primary); border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: bold;">
+                            + Add
+                        </button>
+                    `;
+                    listEl.appendChild(item);
+                });
+            } catch (e) {
+                console.error("Error loading faculty:", e);
+            }
+        }
+
+        window.quickAddTeacher = function (name, subject) {
+            document.getElementById('newTeacherName').value = name;
+            document.getElementById('newTeacherSubject').value = subject || '';
+            document.getElementById('newTeacherSubject').focus();
+        };
+
+
+        // --- Generator Logic ---
+        function generateCurriculumData(config) {
+            const { grades, sectionsPerGrade, registry, classesPerDay, lunchSlot } = config;
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+            const fullCurriculum = [];
+
+            // Get unique subjects
+            const uniqueSubjects = registry.length > 0 ? [...new Set(registry.map(t => t.subject))] : ['English', 'Math', 'Science', 'History', 'Art', 'PE'];
+
+            // Availability grid: Map of Teacher Name -> Schedule Grid
+            const teacherSchedule = {};
+            if (registry.length > 0) {
+                registry.forEach(t => {
+                    teacherSchedule[t.name] = Array(5).fill(null).map(() => Array(classesPerDay).fill(false));
+                });
+            }
+
+            for (let g = 1; g <= grades; g++) {
+                for (let s = 1; s <= sectionsPerGrade; s++) {
+                    const sectionName = `Grade ${g} - Section ${String.fromCharCode(64 + s)}`;
+                    const sectionSchedule = { name: sectionName, days: [] };
+
+                    for (let d = 0; d < 5; d++) {
+                        const dailySlots = [];
+                        for (let p = 0; p < classesPerDay; p++) {
+                            if (p + 1 === lunchSlot) {
+                                dailySlots.push({ type: 'Lunch', subject: 'LUNCH BREAK', teacher: '' });
+                                continue;
+                            }
+
+                            let assigned = false;
+
+                            // Shuffle subjects to ensure variety
+                            const shuffledSubjects = [...uniqueSubjects].sort(() => 0.5 - Math.random());
+
+                            for (const subj of shuffledSubjects) {
+                                if (registry.length === 0) {
+                                    dailySlots.push({ type: 'Class', subject: subj, teacher: 'Staff Member' });
+                                    assigned = true;
+                                    break;
+                                }
+
+                                // Find all teachers who teach this subject
+                                const eligibleTeachers = registry.filter(t => t.subject === subj);
+
+                                // If no teacher for this specific subject, but we have some teachers, try to assign anyone
+                                const teachersToTry = eligibleTeachers.length > 0 ? eligibleTeachers : registry;
+
+                                // Shuffle them to distribute load
+                                const shuffledTeachers = teachersToTry.sort(() => 0.5 - Math.random());
+
+                                for (const t of shuffledTeachers) {
+                                    // Check if this teacher is free at this day & period
+                                    if (!teacherSchedule[t.name][d][p]) {
+                                        dailySlots.push({ type: 'Class', subject: subj, teacher: t.name });
+                                        teacherSchedule[t.name][d][p] = true;
+                                        assigned = true;
+                                        break;
+                                    }
+                                }
+                                if (assigned) break;
+                            }
+
+                            if (!assigned) {
+                                dailySlots.push({ type: 'Free', subject: 'SELF STUDY', teacher: '-' });
+                            }
+                        }
+                        sectionSchedule.days.push({ day: days[d], slots: dailySlots });
+                    }
+                    fullCurriculum.push(sectionSchedule);
+                }
+            }
+            return fullCurriculum;
+        }
+
+        // --- UI Logic ---
+        const form = document.getElementById('configForm');
+        const resultsArea = document.getElementById('results-area');
+        const welcomeMsg = document.getElementById('welcome-message');
+
+        let currentScheduleData = null;
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const config = {
+                grades: parseInt(document.getElementById('grades').value),
+                sectionsPerGrade: parseInt(document.getElementById('sections').value),
+                registry: teacherRegistry,
+                classesPerDay: parseInt(document.getElementById('classesPerDay').value),
+                lunchSlot: parseInt(document.getElementById('lunchSlot').value)
+            };
+
+            currentScheduleData = generateCurriculumData(config);
+            renderSchedule(currentScheduleData);
+        });
+
+        function renderSchedule(data) {
+            welcomeMsg.style.display = 'none';
+            resultsArea.style.display = 'block';
+            resultsArea.innerHTML = '';
+
+            if (userRole === 'admin') {
+                document.getElementById('downloadBtn').style.display = 'block';
+                document.getElementById('saveBtn').style.display = 'block';
+            } else {
+                // Faculty can only download
+                document.getElementById('downloadBtn').style.display = 'block';
+                document.getElementById('saveBtn').style.display = 'none';
+            }
+
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            const currentUserName = currentUser.name;
+
+            data.forEach(section => {
+                const card = document.createElement('div');
+                card.className = 'schedule-card';
+
+                const header = document.createElement('div');
+                header.className = 'card-header';
+                header.textContent = section.name;
+                card.appendChild(header);
+
+                const grid = document.createElement('div');
+                grid.className = 'schedule-grid';
+
+                const corner = document.createElement('div');
+                corner.className = 'grid-header';
+                corner.textContent = 'Period';
+                grid.appendChild(corner);
+
+                ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].forEach(day => {
+                    const dh = document.createElement('div');
+                    dh.className = 'grid-header';
+                    dh.textContent = day;
+                    grid.appendChild(dh);
+                });
+
+                const periods = section.days[0].slots.length;
+                for (let p = 0; p < periods; p++) {
+                    const pl = document.createElement('div');
+                    pl.className = 'grid-cell';
+                    pl.style.fontWeight = 'bold';
+                    pl.style.display = 'flex';
+                    pl.style.flexDirection = 'column';
+                    pl.style.gap = '4px';
+
+                    const pNum = document.createElement('span');
+                    pNum.textContent = p + 1;
+                    pl.appendChild(pNum);
+
+                    const pTime = document.createElement('span');
+                    pTime.style.fontSize = '0.7rem';
+                    pTime.style.color = 'var(--text-muted)';
+                    pTime.style.fontWeight = 'normal';
+                    pTime.textContent = getPeriodTimeRange(p);
+                    pl.appendChild(pTime);
+
+                    grid.appendChild(pl);
+
+                    for (let d = 0; d < 5; d++) {
+                        const slot = section.days[d].slots[p];
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        if (slot.type === 'Lunch') cell.classList.add('cell-lunch');
+                        if (slot.type === 'Free') cell.classList.add('cell-free');
+
+                        const subjSpan = document.createElement('div');
+                        subjSpan.className = 'subject';
+                        subjSpan.textContent = slot.subject;
+                        cell.appendChild(subjSpan);
+
+                        if (slot.teacher) {
+                            const teachSpan = document.createElement('div');
+                            teachSpan.className = 'teacher';
+                            teachSpan.textContent = slot.teacher;
+                            cell.appendChild(teachSpan);
+
+                            // Highlight if it's the current faculty's class
+                            if (userRole === 'faculty' && slot.teacher === currentUserName) {
+                                cell.style.background = 'var(--primary-glow)';
+                                cell.style.border = '2px solid var(--primary)';
+                                cell.style.transform = 'scale(1.02)';
+                                cell.style.zIndex = '5';
+                                cell.style.boxShadow = '0 4px 12px var(--primary-glow)';
+                            }
+                        }
+                        grid.appendChild(cell);
+                    }
+                }
+                card.appendChild(grid);
+                resultsArea.appendChild(card);
+            });
+        }
+
+        // --- PDF Generation Logic ---
+        window.downloadPDF = function () {
+            if (!currentScheduleData) return;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(22);
+            doc.setTextColor(249, 115, 22);
+            doc.text("CurricuForge Master Schedule", 14, 20);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 28);
+            currentScheduleData.forEach((section, index) => {
+                if (index > 0) doc.addPage();
+                doc.setFontSize(16);
+                doc.setTextColor(0);
+                doc.text(section.name, 14, 40);
+                const body = [];
+                const periods = section.days[0].slots.length;
+                for (let p = 0; p < periods; p++) {
+                    const timeRange = getPeriodTimeRange(p);
+                    const row = [`Period ${p + 1}\n${timeRange}`];
+                    for (let d = 0; d < 5; d++) {
+                        const slot = section.days[d].slots[p];
+                        row.push(`${slot.subject}\n${slot.teacher}`);
+                    }
+                    body.push(row);
+                }
+                doc.autoTable({
+                    head: [['Time', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']],
+                    body: body,
+                    startY: 50,
+                    styles: { fontSize: 8, cellPadding: 3, valign: 'middle', halign: 'center' },
+                    headStyles: { fillColor: [249, 115, 22] },
+                    alternateRowStyles: { fillColor: [255, 247, 237] },
+                    theme: 'grid'
+                });
+            });
+            doc.save('CurricuForge_Schedule.pdf');
+        }
+
+        // --- Save to MongoDB Logic ---
+        window.saveToDB = async function () {
+            if (!currentScheduleData) return;
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerText;
+            saveBtn.innerText = 'Saving...';
+            saveBtn.disabled = true;
+            const config = {
+                grades: parseInt(document.getElementById('grades').value),
+                sectionsPerGrade: parseInt(document.getElementById('sections').value),
+                registry: teacherRegistry,
+                classesPerDay: parseInt(document.getElementById('classesPerDay').value),
+                lunchSlot: parseInt(document.getElementById('lunchSlot').value)
+            };
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+            try {
+                const response = await fetch('http://localhost:3000/api/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: userId,
+                        institution: currentUser.institution,
+                        config: config,
+                        data: currentScheduleData
+                    })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Schedule saved to Database successfully!');
+                } else {
+                    alert('Failed to save: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error saving to DB:', error);
+                alert('Error connecting to server. Make sure the Node server is running on port 3000.');
+            } finally {
+                saveBtn.innerText = originalText;
+                saveBtn.disabled = false;
+            }
+        }
+
+        // --- History Logic ---
+        const modal = document.getElementById('historyModal');
+        const historyList = document.getElementById('historyList');
+        window.openHistory = async function () {
+            modal.style.display = 'flex';
+            historyList.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">Loading...</p>';
+            try {
+                const res = await fetch('http://localhost:3000/api/schedules');
+                const data = await res.json();
+                if (!data || data.length === 0) {
+                    historyList.innerHTML = '<p style="text-align:center; padding: 2rem; color: var(--text-muted);">No saved schedules found.</p>';
+                    return;
+                }
+                historyList.innerHTML = '';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'history-item';
+                    div.innerHTML = `
+                        <div style="font-weight:bold; color:var(--text);">${item.config?.grades || '?'} Grades, ${item.config?.sectionsPerGrade || '?'} Sections</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">
+                            ${new Date(item.createdAt).toLocaleString()}
+                        </div>
+                    `;
+                    div.onclick = () => loadHistoryItem(item._id);
+                    historyList.appendChild(div);
+                });
+            } catch (e) {
+                historyList.innerHTML = '<p style="text-align:center; color: red;">Error fetching history</p>';
+            }
+        }
+        window.closeHistory = function () {
+            modal.style.display = 'none';
+        }
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeHistory();
+        });
+        async function loadHistoryItem(id) {
+            try {
+                historyList.innerHTML = '<p style="text-align:center; padding: 2rem;">Loading details...</p>';
+                const res = await fetch(`http://localhost:3000/api/schedules/${id}`);
+                const fullData = await res.json();
+                if (fullData && fullData.data) {
+                    if (fullData.config) {
+                        document.getElementById('grades').value = fullData.config.grades;
+                        document.getElementById('sections').value = fullData.config.sectionsPerGrade;
+                        document.getElementById('classesPerDay').value = fullData.config.classesPerDay;
+                        document.getElementById('lunchSlot').value = fullData.config.lunchSlot;
+                    }
+                    currentScheduleData = fullData.data;
+                    renderSchedule(currentScheduleData);
+                    closeHistory();
+                }
+            } catch (e) {
+                alert('Failed to load item');
+                closeHistory();
+            }
+        }
+
+        // --- Chatbot Logic ---
+        function toggleChat() {
+            const window = document.getElementById('chatWindow');
+            window.classList.toggle('active');
+            if (window.classList.contains('active')) {
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addChatMessage('user', message);
+            input.value = '';
+
+            const typingId = 'typing-' + Date.now();
+            addChatMessage('ai', 'Thinking...', typingId);
+
+            try {
+                const response = await fetch('http://localhost:3000/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message,
+                        scheduleContext: currentScheduleData,
+                        userRole: sessionStorage.getItem('userRole')
+                    })
+                });
+
+                const data = await response.json();
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+
+                if (response.ok) {
+                    addChatMessage('ai', data.reply);
+                } else {
+                    let errorText = data.message || "Sorry, I'm having trouble connecting right now.";
+                    if (data.error && data.error.includes('API_KEY_INVALID') || errorText.includes('API key')) {
+                        errorText = "<b>Configuration Issue:</b> The Gemini API key is missing or invalid. Please check your .env file and restart the server.";
+                    } else if (data.error && data.error.includes('429') || errorText.includes('quota')) {
+                        errorText = "<b>Quota Exceeded:</b> You have exceeded your Gemini API quota. Please check your <a href='https://aistudio.google.com/' target='_blank' style='color:inherit;'>Google AI Studio</a> account/billing.";
+                    }
+                    addChatMessage('ai', errorText);
+                }
+            } catch (error) {
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) typingEl.remove();
+                addChatMessage('ai', "<b>Connection Error:</b> Could not reach the AI server. Is the backend running?");
+            }
+        }
+
+        function addChatMessage(role, text, id = null) {
+            const body = document.getElementById('chatBody');
+            const msg = document.createElement('div');
+            msg.className = `chat-message ${role}`;
+            if (id) msg.id = id;
+            msg.innerHTML = text; // Use innerHTML to allow basic formatting like <b>
+            body.appendChild(msg);
+            body.scrollTop = body.scrollHeight;
+        }
+    </script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CurricuForge - Login</title>
+    <!-- Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* Shared variables from index.html for consistency */
+        :root {
+            --primary: #f97316;
+            --primary-glow: rgba(249, 115, 22, 0.3);
+            --secondary: #fb923c;
+            --secondary-glow: rgba(251, 146, 60, 0.3);
+            --background: #fff7ed;
+            --surface: #ffffff;
+            --surface-transparent: rgba(255, 255, 255, 0.6);
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --glass-border: rgba(249, 115, 22, 0.15);
+            --glass-shadow: rgba(249, 115, 22, 0.05);
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --input-text: #1f2937;
+            --success: #42b72a;
+        }
+
+        [data-theme="dark"] {
+            --primary: #f97316;
+            --primary-glow: rgba(249, 115, 22, 0.4);
+            --secondary: #c2410c;
+            --background: #0c0a09;
+            --surface: #1c1917;
+            --surface-transparent: rgba(28, 25, 23, 0.7);
+            --text: #fff7ed;
+            --text-muted: #a8a29e;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.3);
+            --input-bg: rgba(12, 10, 9, 0.6);
+            --input-text: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                radial-gradient(circle at 10% 20%, var(--primary-glow), transparent 30%),
+                radial-gradient(circle at 90% 80%, var(--secondary-glow), transparent 30%);
+            padding: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 980px;
+            width: 100%;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        @media (min-width: 900px) {
+            .main-container {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: start;
+                padding-top: 5vh;
+            }
+        }
+
+        /* Left Side: Branding */
+        .branding-section {
+            flex: 1;
+            padding-right: 0;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        @media (min-width: 900px) {
+            .branding-section {
+                text-align: left;
+                padding-right: 32px;
+                margin-top: 40px;
+                max-width: 500px;
+            }
+        }
+
+        .branding-section h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 10px var(--primary-glow);
+        }
+
+        .branding-section p {
+            font-size: 1.5rem;
+            line-height: 1.4;
+            color: var(--text);
+        }
+
+        /* Right Side: Login Card */
+        .login-card {
+            background: var(--surface-transparent);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px var(--glass-shadow);
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+            background: var(--input-bg);
+            color: var(--input-text);
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .login-btn {
+            background: var(--primary);
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover {
+            background: var(--secondary);
+            transform: translateY(-1px);
+        }
+
+        .forgot-link {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--primary);
+            text-decoration: none;
+            margin-top: 0.5rem;
+        }
+
+        .forgot-link:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--glass-border);
+            margin: 1rem 0;
+        }
+
+        .create-btn {
+            background: var(--success);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            align-self: center;
+            transition: filter 0.2s;
+        }
+
+        .create-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .footnote {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            max-width: 400px;
+        }
+
+        .footnote a {
+            font-weight: bold;
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .footnote a:hover {
+            text-decoration: underline;
+        }
+
+        /* Modal Styles */
+        .modal-base {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: var(--background);
+            border: 1px solid var(--glass-border);
+            width: 90%;
+            max-width: 450px;
+            border-radius: 8px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="main-container">
+        <!-- Brand Side -->
+        <div class="branding-section">
+            <h1>CurricuForge</h1>
+            <p>Connect with your schedule, plan your curriculum, and forge the future of education.</p>
+        </div>
+
+        <!-- Login Card Side -->
+        <div class="content-wrapper"
+            style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:400px;">
+            <div class="login-card">
+                <form onsubmit="handleLogin(event)">
+                    <input type="text" id="loginEmail" class="form-input" placeholder="Email or Phone Number" required
+                        style="margin-bottom: 12px;">
+                    <input type="password" id="loginPassword" class="form-input" placeholder="Password" required>
+
+                    <button type="submit" class="login-btn" style="width:100%; margin-top: 12px;">Log In</button>
+                </form>
+
+                <a href="#" class="forgot-link">Forgot Password?</a>
+
+                <div class="divider"></div>
+
+                <button class="create-btn" onclick="openModal()">Create new account</button>
+            </div>
+
+            <div class="footnote">
+                <p><a href="#">Create a Page</a> for a celebrity, brand or business.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="registerModal" class="modal-base">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h2 style="font-size:1.5rem; font-weight:700;">Sign Up</h2>
+                    <p style="font-size:0.9rem; color:var(--text-muted);">It's quick and easy.</p>
+                </div>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group" style="display:flex; gap:10px;">
+                        <input type="text" id="regName" class="form-input" placeholder="Full Name" required>
+                        <input type="text" id="regInstitution" class="form-input" placeholder="Institution" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="regEmail" class="form-input" placeholder="Email or Phone Number"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="regPassword" class="form-input" placeholder="New Password" required>
+                    </div>
+                    <div class="form-group" style="display:flex; gap:10px;">
+                        <input type="text" id="regSubject" class="form-input" placeholder="Subject (e.g. Physics)"
+                            required>
+                        <select id="regLevel" class="form-input" required style="flex:1;">
+                            <option value="" disabled selected>Select School Level</option>
+                            <option value="Kindergarden">Kindergarden</option>
+                            <option value="Juniorschool">Juniorschool</option>
+                            <option value="Highschool">Highschool</option>
+                        </select>
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.4;">
+                        People who use our service may have uploaded your contact information to CurricuForge. <a
+                            href="#" style="color:var(--primary);">Learn more</a>.
+                    </p>
+                    <div style="text-align:center;">
+                        <button type="submit" class="create-btn" style="width:50%;">Sign Up</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('registerModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('registerModal').style.display = 'none';
+        }
+
+        // Close modal if clicking outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('registerModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const name = document.getElementById('regName').value;
+            const institution = document.getElementById('regInstitution').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const subject = document.getElementById('regSubject').value;
+            const level = document.getElementById('regLevel').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, institution, email, password, subject, level })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert("Account created successfully! Please log in.");
+                    closeModal();
+                    event.target.reset();
+                } else {
+                    alert(data.message || "Registration failed");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert("An error occurred. Please make sure the server is running.");
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('loginEmail').value;
+            const passwordInput = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailInput, password: passwordInput })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    sessionStorage.setItem('isLoggedIn', 'true');
+                    sessionStorage.setItem('currentUser', JSON.stringify(data.user));
+                    // Store userId specifically for easier access
+                    sessionStorage.setItem('userId', data.user._id);
+                    sessionStorage.setItem('userRole', data.user.role);
+                    window.location.href = 'index.html';
+                } else {
+                    alert(data.message || "Invalid credentials");
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                // Fallback for demo if server is down (optional, but requested to connect to backend)
+                alert("Login failed. Is the server running?");
+            }
+        }
+    </script>
+</body>
+
+</html>
